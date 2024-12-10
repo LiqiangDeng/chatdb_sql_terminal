@@ -1,0 +1,7 @@
+transaction_ids,transaction_date,transaction_time,transaction_qty,store_id,store_location,product_id,unit_price,product_category,product_type,product_detail
+89198,5/9/2023,8:53:09,1,8,Hell's Kitchen,29,2.5,Coffee,Gourmet brewed coffee,Columbian Medium Roast Rg
+89201,5/9/2023,8:55:36,1,3,Astoria,45,3,Tea,Brewed herbal tea,Peppermint Lg
+89214,5/9/2023,9:01:23,1,8,Hell's Kitchen,36,3.75,Coffee,Premium brewed coffee,Jamaican Coffee River Lg
+89217,5/9/2023,9:01:58,1,5,Lower Manhattan,41,4.25,Coffee,Barista Espresso,Cappuccino Lg
+89227,5/9/2023,9:06:38,2,5,Lower Manhattan,28,2,Coffee,Gourmet brewed coffee,Columbian Medium Roast Sm
+89229,5/9/2023,9:06:46,1,5,Lower Manhattan,43,3,Tea,Brewed herbal tea,Lemon Grass Lg
