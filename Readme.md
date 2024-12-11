@@ -1,6 +1,6 @@
 # ChatDB: A SQL like chat database software based on console interaction
 
-This is a project that imitates the interaction of ChatGPT to make it easy for users to interact with the database. This project currently only supports dialogue interaction between console terminal programs and MySQL databases. 
+This project mainly focuses on developing a kind of interactive ChatGPT-like application that can help user to interact with the database. They can learn how to query data in database system, and perform some simple operations through dialogue with the program. The program currently only supports console terminal interaction and only supports MySQL database.
 
 ---
 
@@ -46,7 +46,12 @@ pip install -r requirements.txt
 
 You can first modify the database connection configuration information from the 'mysql_conn.py' file, and then obtain the table structure in the 'upload.py' file. You can choose to manually create the table structure or run it separately to complete the initial table structure creation and test data upload.
 
+(Optional) Recommend manually creating table structures based on database configuration
+```base
+python upload.py
+```
 
+Enter the main program
 ```bash
 python main.py
 ```

@@ -1,3 +1,9 @@
+# This file is mainly used to process users' natural language input and generate corresponding SQL queries. 
+# The main process is to match the user's input pattern, 
+# map it to the corresponding data table fields and determine the data tables to participate in the query, 
+# and then combine them into a template to output SQL queries.
+
+
 import re
 
 TABLE_STRUCTURE = {
@@ -12,27 +18,13 @@ TABLE_STRUCTURE = {
     }
 }
 
+# List all possible column mapping
 TABLE_FIELDS = {
     "sales": {
         "field": "transactions.transaction_qty * products.unit_price",
         "tables": ["transactions", "products"],
         "new": True,
     },
-    # "sales quantity": {
-    #     "field": "SUM(transactions.transaction_qty)",
-    #     "tables": ["transactions"]
-    # },
-    # "sales day": {
-    #     "field": "transactions.transaction_date, transactions.transaction_qty * products.unit_price",
-    #     "tables": ["transactions", "products"]
-    # },
-    # "sales time": {
-    #     "field": "transactions.transaction_time, transactions.transaction_qty * products.unit_price",
-    #     "tables": ["transactions", "products"]
-    # },
-    # "sales quantity": "SUM(transactions.transaction_qty)",
-    # "sales day": "transactions.transaction_date, SUM(transactions.transaction_qty * products.unit_price)",
-    # "sales time": "transactions.transaction_time, SUM(transactions.transaction_qty * products.unit_price)",
     "day": {
         "field": "transaction_date",
         "tables": ["transactions"]
@@ -113,18 +105,9 @@ TABLE_FIELDS = {
         "field": "product_detail",
         "tables": ["products"]
     },
-    # "product category": "product_category",
-    # "product type": "product_type",
-    # "product detail": "product_detail",
-    # "transaction id": "transaction_id",
-    # "transaction date": "transaction_date",
-    # "transaction time": "transaction_time",
-    # "store": "store_location",
-    # "location": "store_location",
-    # "product": "product_detail",
-    # "store location": "store_location",
 }
 
+# List all templates
 PATTERN_SQL_MAP = {
     r"total (.+) by (.+)": "SELECT {field2}, {field3}SUM({field1}) AS total FROM {table} GROUP BY {field3}{field2};",
     r"count (.+) by (.+)": "SELECT {field2}, {field3}COUNT({field1}) AS count FROM {table} GROUP BY {field3}{field2};",
@@ -134,7 +117,6 @@ PATTERN_SQL_MAP = {
     r"top (\d+) (.+) by (.+)": "SELECT {field2}, {field3}SUM({field1}) AS total FROM {table} GROUP BY {field3}{field2} ORDER BY total DESC LIMIT {n};",
     r"filter (.+) where (.+)": "SELECT * FROM {table} WHERE {field1} = '{value}';",
     r"filter (.+) where (\d+)": "SELECT * FROM {table} WHERE {field1} = {value};",
-    # r"find (.+) where (.+)": "SELECT * FROM {table} WHERE {field1} = '{value}';",
     r"highest (.+) for (.+)": "SELECT {field2}, {field3}SUM({field1}) AS total FROM {table} GROUP BY {field3}{field2} ORDER BY total DESC;",
     r"lowest (.+) for (.+)": "SELECT {field2}, {field3}SUM({field1}) AS total FROM {table} GROUP BY {field3}{field2} ORDER BY total;",
 
@@ -146,7 +128,6 @@ PATTERN_SQL_MAP = {
     r"top (\d+) (.+) by (.+)_join": "SELECT {field2}, {field3}SUM{field1} AS total FROM {table1} JOIN {table2} ON {join_condition} GROUP BY {field3}{field2} ORDER BY total DESC LIMIT {n};",
     r"filter (.+) where (.+)_join": "SELECT {field1}, {field2} FROM {table1} JOIN {table2} ON {join_condition} WHERE {filter_condition};",
     r"filter (.+) where (\d+)_join": "SELECT {field1}, {field2} FROM {table1} JOIN {table2} ON {join_condition} WHERE {filter_condition};",
-    # r"find (.+) where (.+)_join": "SELECT {field1}, {field2} FROM {table1} JOIN {table2} ON {join_condition} WHERE {filter_condition};",
     r"highest (.+) for (.+)_join": "SELECT {field2}, {field3}SUM({field1}) AS total FROM {table1} JOIN {table2} ON {join_condition} GROUP BY {field3}{field2} ORDER BY total DESC;",
     r"lowest (.+) for (.+)_join": "SELECT {field2}, {field3}SUM({field1}) AS total FROM {table1} JOIN {table2} ON {join_condition} GROUP BY {field3}{field2} ORDER BY total;",
 
@@ -158,7 +139,6 @@ PATTERN_SQL_MAP = {
     r"top (\d+) (.+) by (.+)_join3": "SELECT {field2}, {field3}SUM{field1} AS total FROM {join_condition} GROUP BY {field3}{field2} ORDER BY total DESC LIMIT {n};",
     r"filter (.+) where (.+)_join3": "SELECT {field1}, {field2} FROM {join_condition} WHERE {filter_condition};",
     r"filter (.+) where (\d+)_join3": "SELECT {field1}, {field2} FROM {join_condition} WHERE {filter_condition};",
-    # r"find (.+) where (.+)_join3": "SELECT {field1}, {field2} FROM {join_condition} WHERE {filter_condition};",
     r"highest (.+) for (.+)_join3": "SELECT {field2}, {field3}SUM({field1}) AS total FROM {join_condition} GROUP BY {field3}{field2} ORDER BY total DESC;",
     r"lowest (.+) for (.+)_join3": "SELECT {field2}, {field3}SUM({field1}) AS total FROM {join_condition} GROUP BY {field3}{field2} ORDER BY total;",
 }
@@ -245,6 +225,7 @@ def find_table_for_field(field):
             return table
     return None
 
+# Splicing SQL partial strings, connection conditions in the case of join
 def find_join_condition(table1, table2):
     """Find the join condition between two tables based on foreign key definitions."""
     if table1 in FOREIGN_KEYS:
@@ -259,13 +240,13 @@ def find_join_condition(table1, table2):
                 return f"{table2}.{key} = {table1}.{ref_field}"
     return None
 
-
+# Extract field and table information after matching patterns, 
+# fill in different templates based on the number of tables involved, and output SQL queries.
 def parse_user_input(user_input):
     for pattern, sql_template in PATTERN_SQL_MAP.items():
         match = re.search(pattern, user_input.lower(), re.IGNORECASE)
         if match:
             groups = match.groups()
-            # print(groups)
             
             if len(groups) == 3:  # for "top N <A> by <B>" pattern
                 n = groups[0]
@@ -275,37 +256,21 @@ def parse_user_input(user_input):
 
             field1_val = extract_matching_values(field1, TABLE_FIELDS)
             field2_val = extract_matching_values(field2, TABLE_FIELDS)
-            # print(field1_val)
-            
-            # sql_field1_dict = TABLE_FIELDS.get(field1.lower(), field1.lower())
-            # sql_field2_dict = TABLE_FIELDS.get(field2.lower(), field2.lower())
 
-            # table_list = list(set(sql_field1_dict["tables"] + sql_field2_dict["tables"]))
             merged_tables = set()
-            # merged_field1 = set()
-            # merged_field2 = set()
+
             for item in field1_val:
                 if "tables" in item:
                     merged_tables.update(item["tables"])
-                # if "field" in item:
-                #     merged_field1.update(item["field"])
+
             for item in field2_val:
                 if "tables" in item:
                     merged_tables.update(item["tables"])
             table_list = list(merged_tables)
-            # print(list(merged_tables))
-            
-            # table_list = list(set(field1_val["tables"] + sql_field2_dict["tables"]))
 
-            # table1 = find_table_for_field(sql_field1)
-            # table2 = find_table_for_field(sql_field2)
-            # print(sql_field1, sql_field2, table1, table2)
 
-            # if table1 and table2 and table1 == table2:
             if table_list and len(table_list) == 1:
                 table = table_list[0]
-                # sql_field1 = sql_field1_dict["field"]
-                # sql_field2 = sql_field2_dict["field"]
                 sql_field1  = ", ".join(item['field'] for item in field1_val if 'field' in item)
                 sql_field2  = ", ".join(item['field'] for item in field2_val if 'field' in item)
                 sql_field3 = ""
@@ -323,15 +288,9 @@ def parse_user_input(user_input):
                 
                 return query, explanation
             
-            # elif table1 and table2 and table1 != table2:
             elif table_list and len(table_list) == 2:
                 table1, table2 = table_list[0], table_list[1]
-                # sql_field1 = f"{sql_field1_dict['tables'][0]}.{sql_field1_dict['field']}"
-                # sql_field2 = f"{sql_field2_dict['tables'][0]}.{sql_field2_dict['field']}"
-                # sql_field1 = merge_fields_and_deduplicate_tables(field1_val)
-                # sql_field2 = merge_fields_and_deduplicate_tables(field2_val)
                 sql_field1, sql_field2, sql_field3 = merge_fields(field1_val, field2_val)
-                # print("sql", sql_field1, sql_field2, sql_field3)
 
                 join_condition = find_join_condition(table1, table2)
                 if not join_condition:
@@ -357,10 +316,7 @@ def parse_user_input(user_input):
             
             elif table_list and len(table_list) == 3:
                 join_condition = "transactions JOIN stores ON stores.store_id = transactions.store_id JOIN products ON products.product_id = transactions.product_id"
-                # sql_field1 = sql_field1_dict["field"]
-                # sql_field2 = f"{sql_field2_dict['tables'][0]}.{sql_field2_dict['field']}"
                 sql_field1, sql_field2, sql_field3 = merge_fields(field1_val, field2_val)
-                # print("sql", sql_field1, sql_field2, sql_field3)
 
                 join_pattern = pattern + "_join3"
                 if join_pattern in PATTERN_SQL_MAP:

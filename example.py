@@ -1,3 +1,6 @@
+# This file is mainly used to generate specific SQL queries based on the corresponding keywords
+
+
 import random
 from datetime import datetime, timedelta
 
